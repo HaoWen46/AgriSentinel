@@ -51,8 +51,10 @@ models/
 
 # ---- Report build artifacts ----
 report/_build/
-report/*.pdf
 report/*.html
+report/*.pdf
+# the compiled report PDF is the submission deliverable — keep it tracked
+!report/report.pdf
 !report/figures/**
 
 # ---- Editor / OS ----
