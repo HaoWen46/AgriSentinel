@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AgriSentinel — farmland factory watch</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
+<style>
+  :root{
+    --ink:#1c2419; --paper:#f6f4ec; --panel:#ffffff; --line:#d9d6c8;
+    --green:#2f6b3c; --green-d:#234f2c; --amber:#c9772a; --red:#b23b2e; --muted:#6b6f63;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:"Segoe UI",-apple-system,system-ui,sans-serif;color:var(--ink);background:var(--paper)}
+  .mono{font-family:"SFMono-Regular",ui-monospace,Menlo,Consolas,monospace}
+  #app{display:grid;grid-template-columns:380px 1fr;height:100vh}
+  #side{border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;overflow:hidden}
+  header{padding:16px 18px;border-bottom:1px solid var(--line);background:var(--green-d);color:#f3f1e6}
+  header h1{margin:0;font-size:19px;letter-spacing:.2px}
+  header p{margin:4px 0 0;font-size:12px;color:#cdd8c6}
+  .scroll{overflow-y:auto;padding:14px 16px;flex:1}
+  .card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px;background:#fdfcf7}
+  .card h2{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+  .metric{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 4px}
+  .metric .v{font-size:22px;font-weight:700;color:var(--green-d)}
+  .metric .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .counts{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+  .counts b{color:var(--ink)}
+  select,button{font:inherit;border:1px solid var(--line);border-radius:8px;background:#fff;padding:6px 8px;color:var(--ink)}
+  button{cursor:pointer}
+  label.row{display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0}
+  .flag{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px;cursor:pointer;background:#fff;transition:.12s}
+  .flag:hover{border-color:var(--green);background:#f4f8f2}
+  .flag .top{display:flex;justify-content:space-between;align-items:center}
+  .flag .land{font-weight:600;font-size:13px}
+  .pill{font-size:10px;padding:2px 7px;border-radius:999px;color:#fff}
+  .pill.high{background:var(--red)} .pill.medium{background:var(--amber)} .pill.low{background:#8a8d7f}
+  .flag .sub{font-size:11px;color:var(--muted);margin-top:3px}
+  #map{height:100vh}
+  .legend{font-size:12px;line-height:1.7}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  #overlay{position:fixed;inset:0;background:rgba(20,24,18,.42);display:none;align-items:center;justify-content:center;z-index:1000}
+  #dossier{background:var(--paper);width:min(880px,92vw);max-height:90vh;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 18px 60px rgba(0,0,0,.35)}
+  #dossier .dh{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--green-d);color:#f3f1e6}
+  #dossier .dh h3{margin:0;font-size:16px}
+  #dossier .db{overflow-y:auto;padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  #dossier .md{grid-column:1/3;background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+  #dossier .md h1{font-size:18px;margin-top:0} #dossier .md h2{font-size:14px;color:var(--green-d)}
+  .ba{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+  .ba img{width:100%;height:200px;object-fit:cover;border-radius:6px;background:#eee;image-rendering:pixelated}
+  .ba .cap{font-size:11px;color:var(--muted);margin-top:6px}
+  .close{background:transparent;border:1px solid #cdd8c6;color:#f3f1e6}
+  .src{font-size:11px;color:var(--muted);margin-top:8px}
+  a{color:var(--green)}
+  #live{font-size:11px;color:#cdd8c6}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <header>
+      <h1>AgriSentinel</h1>
+      <p id="aoiName">illegal-factory watch over farmland</p>
+      <p id="live">● connecting to event stream…</p>
+    </header>
+    <div class="scroll">
+      <div class="card">
+        <h2>Detection run</h2>
+        <select id="runSel" style="width:100%"></select>
+        <div class="counts" id="counts"></div>
+      </div>
+      <div class="card">
+        <h2>Eval vs Disfactory labels</h2>
+        <div class="metrics">
+          <div class="metric"><div class="v" id="mPrec">–</div><div class="k">precision</div></div>
+          <div class="metric"><div class="v" id="mRec">–</div><div class="k">recall</div></div>
+          <div class="metric"><div class="v" id="mF1">–</div><div class="k">F1</div></div>
+        </div>
+        <div class="src" id="mNote"></div>
+      </div>
+      <div class="card">
+        <h2>Layers</h2>
+        <label class="row"><input type="checkbox" id="lFlag" checked> Flagged farmland parcels</label>
+        <label class="row"><input type="checkbox" id="lDet"> All change detections</label>
+        <label class="row"><input type="checkbox" id="lLab" checked> Disfactory labels</label>
+        <label class="row"><input type="checkbox" id="lPar"> Farmland parcels</label>
+        <div class="legend" style="margin-top:8px">
+          <div><i style="background:#b23b2e"></i>flagged (high conf.)</div>
+          <div><i style="background:#c9772a"></i>flagged (medium)</div>
+          <div><i style="background:#2f6b3c"></i>farmland parcel</div>
+          <div><i style="background:#1f5fae"></i>Disfactory label</div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Flagged parcels — click for dossier</h2>
+        <div id="flagList"></div>
+      </div>
+      <div class="src">
+        Sentinel-2 © ESA (open) · labels © Disfactory contributors, CC BY 4.0 ·
+        statutes © 全國法規資料庫 (MOJ). Dossiers are decision-support, not legal rulings.
+      </div>
+    </div>
+  </aside>
+  <main><div id="map"></div></main>
+</div>
+
+<div id="overlay">
+  <div id="dossier">
+    <div class="dh"><h3 id="dTitle">Dossier</h3><button class="close" onclick="closeDossier()">Close ✕</button></div>
+    <div class="db">
+      <div class="ba"><img id="imgBefore" alt="before"/><div class="cap">Before (t0)</div></div>
+      <div class="ba"><img id="imgAfter" alt="after"/><div class="cap">After (t1) — Sentinel-2 RGB</div></div>
+      <div class="md" id="dMd"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (id)=>document.getElementById(id);
+let map, aoi, layers={}, currentRun=null;
+
+// Safe DOM builder (no innerHTML anywhere).
+function h(tag, attrs, ...kids){
+  const e=document.createElement(tag); attrs=attrs||{};
+  for(const k in attrs){
+    const v=attrs[k];
+    if(k==="class") e.className=v;
+    else if(k==="text") e.textContent=v;
+    else if(k.startsWith("on")) e.addEventListener(k.slice(2).toLowerCase(), v);
+    else if(v!=null) e.setAttribute(k, v);
+  }
+  for(const c of kids){ if(c==null) continue; e.append(c.nodeType?c:document.createTextNode(String(c))); }
+  return e;
+}
+
+const style = {
+  parcel:{color:"#2f6b3c",weight:1,fillOpacity:0.08},
+  det:{color:"#7a6a3a",weight:1,fillOpacity:0.1,dashArray:"3"},
+  flagHigh:{color:"#b23b2e",weight:2,fillColor:"#b23b2e",fillOpacity:0.35},
+  flagMed:{color:"#c9772a",weight:2,fillColor:"#c9772a",fillOpacity:0.30},
+  flagLow:{color:"#8a8d7f",weight:2,fillColor:"#8a8d7f",fillOpacity:0.25},
+};
+const confClass=(c)=> c>=0.66?"high":(c>=0.4?"medium":"low");
+const flagStyle=(c)=> c>=0.66?style.flagHigh:(c>=0.4?style.flagMed:style.flagLow);
+
+async function getJSON(u){const r=await fetch(u); if(!r.ok) throw new Error(u+" → "+r.status); return r.json();}
+
+function runOptions(runs){
+  return runs.map(x=>h("option",{value:x.run_id}, `${x.run_id} · ${x.n_flagged} flagged`));
+}
+
+async function init(){
+  aoi = await getJSON("/api/aoi");
+  $("aoiName").textContent = aoi.display_name;
+  map = L.map("map");
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {maxZoom:19, attribution:"© OpenStreetMap"}).addTo(map);
+  const b = aoi.bbox; map.fitBounds([[b[1],b[0]],[b[3],b[2]]]);
+  L.rectangle([[b[1],b[0]],[b[3],b[2]]],{color:"#234f2c",weight:1.5,fill:false,dashArray:"6"}).addTo(map);
+
+  for(const k of ["lFlag","lDet","lLab","lPar"]) $(k).addEventListener("change", refreshLayers);
+  $("runSel").addEventListener("change", ()=>{currentRun=$("runSel").value; loadRun();});
+
+  const r = await getJSON("/api/runs");
+  $("runSel").replaceChildren(...runOptions(r.runs));
+  if(!r.runs.length){ $("counts").replaceChildren(h("span",{},"No runs yet — run the pipeline (make demo).")); }
+  currentRun = r.latest;
+  if(currentRun){ await loadRun(); }
+  connectSSE();
+}
+
+async function loadRun(){
+  if(!currentRun) return;
+  const [flagged, dets, metrics] = await Promise.all([
+    getJSON(`/api/flagged?run_id=${currentRun}`),
+    getJSON(`/api/detections?run_id=${currentRun}`),
+    getJSON(`/api/metrics?run_id=${currentRun}`),
+  ]);
+  window._flagged = flagged; window._dets = dets;
+  renderMetrics(metrics, flagged, dets);
+  renderFlagList(flagged);
+  await refreshLayers();
+}
+
+function renderMetrics(m, flagged, dets){
+  const pct=(x)=> (x==null?"–":(Math.round(x*100)+"%"));
+  $("mPrec").textContent=pct(m.precision); $("mRec").textContent=pct(m.recall);
+  $("mF1").textContent=(m.f1==null?"–":m.f1.toFixed(2));
+  $("mNote").textContent=m.note||"";
+  $("counts").replaceChildren(
+    h("span",{},h("b",{},dets.features.length)," detections"),
+    h("span",{},h("b",{},flagged.features.length)," on farmland"),
+    h("span",{},h("b",{},m.n_labels??"–")," known labels"),
+  );
+}
+
+function renderFlagList(flagged){
+  const feats=[...flagged.features].sort((a,b)=>(a.properties.rank||1e9)-(b.properties.rank||1e9));
+  if(!feats.length){ $("flagList").replaceChildren(h("div",{class:"src"},"No flagged parcels in this run.")); return; }
+  $("flagList").replaceChildren(...feats.map(f=>{
+    const p=f.properties, cc=confClass(p.confidence||0);
+    const corro=(p.distance_to_label_m!=null && p.distance_to_label_m<=100)?" · ✓ near label":"";
+    return h("div",{class:"flag", onclick:()=>openByFlag(p.flagged_id)},
+      h("div",{class:"top"},
+        h("span",{class:"land mono"}, p.landcode||"(parcel)"),
+        h("span",{class:"pill "+cc}, `${cc} ${(p.confidence*100|0)}%`)),
+      h("div",{class:"sub"}, `#${p.rank??"–"} · ${Math.round(p.overlap_area_m2||0)} m² on farmland${corro}${p.has_dossier?"":" · (no dossier yet)"}`),
+    );
+  }));
+}
+
+async function refreshLayers(){
+  for(const k in layers){ map.removeLayer(layers[k]); }
+  layers={};
+  if($("lPar").checked){
+    const par = await getJSON(`/api/parcels?farmland_only=true&limit=8000`);
+    layers.par = L.geoJSON(par,{style:style.parcel}).addTo(map);
+  }
+  if($("lDet").checked && window._dets){
+    layers.det = L.geoJSON(window._dets,{style:style.det}).addTo(map);
+  }
+  if($("lFlag").checked && window._flagged){
+    layers.flag = L.geoJSON(window._flagged,{
+      style:f=>flagStyle(f.properties.confidence||0),
+      onEachFeature:(f,l)=>{const p=f.properties;
+        l.bindTooltip(`${p.landcode||""} · ${(p.confidence*100|0)}%`);
+        l.on("click",()=>openByFlag(p.flagged_id));}
+    }).addTo(map);
+  }
+  if($("lLab").checked){
+    const lab = await getJSON(`/api/labels`);
+    layers.lab = L.geoJSON(lab,{pointToLayer:(f,ll)=>L.circleMarker(ll,
+      {radius:6,color:"#1f5fae",weight:2,fillColor:"#3b82d6",fillOpacity:.7})
+      .bindTooltip("Disfactory "+(f.properties.landcode||f.properties.id))}).addTo(map);
+  }
+}
+
+function renderMarkdown(el, md){
+  if(window.marked && window.DOMPurify){
+    const frag = DOMPurify.sanitize(marked.parse(md||""), {RETURN_DOM_FRAGMENT:true});
+    el.replaceChildren(frag);
+  } else {
+    el.replaceChildren(h("pre",{}, md||""));
+  }
+}
+
+async function openByFlag(fid){
+  const f=(window._flagged.features||[]).find(x=>x.properties.flagged_id===fid);
+  try{
+    const d=await getJSON(`/api/dossiers/${fid}`);
+    $("dTitle").textContent=`Dossier · ${d.landcode||d.parcel_id} (${d.model})`;
+    renderMarkdown($("dMd"), d.dossier_md);
+  }catch(e){
+    $("dTitle").textContent="Dossier";
+    $("dMd").replaceChildren(h("p",{},"No dossier generated for this parcel yet. Run dossiers (needs ANTHROPIC_API_KEY) — otherwise a template fallback is used."));
+  }
+  if(f){
+    const bnds=L.geoJSON(f).getBounds().pad(1.2);
+    const q=`minx=${bnds.getWest()}&miny=${bnds.getSouth()}&maxx=${bnds.getEast()}&maxy=${bnds.getNorth()}`;
+    $("imgBefore").src=`/api/imagery/t0.png?${q}`;
+    $("imgAfter").src=`/api/imagery/t1.png?${q}`;
+  }
+  $("overlay").style.display="flex";
+}
+function closeDossier(){ $("overlay").style.display="none"; }
+$("overlay")?.addEventListener("click",(e)=>{ if(e.target.id==="overlay") closeDossier(); });
+
+function connectSSE(){
+  try{
+    const es=new EventSource("/api/stream");
+    es.onopen=()=> $("live").textContent="● live — listening for new detections";
+    es.onerror=()=> $("live").textContent="○ event stream offline (batch mode)";
+    es.onmessage=(m)=>{
+      try{ const ev=JSON.parse(m.data);
+        $("live").textContent=`● event: ${ev.type} (${ev.run_id||""})`;
+        if(ev.type==="dossiers.ready"||ev.type==="detection.completed"){ refreshRuns().then(()=>loadRun()); }
+      }catch(_){}
+    };
+  }catch(e){ $("live").textContent="○ event stream unavailable"; }
+}
+async function refreshRuns(){
+  const r=await getJSON("/api/runs");
+  $("runSel").replaceChildren(...runOptions(r.runs));
+  if(r.latest){ currentRun=r.latest; $("runSel").value=r.latest; }
+}
+
+init().catch(e=>{ document.body.replaceChildren(h("pre",{style:"padding:20px"},"Failed to load: "+e+"\nIs the API up and the pipeline run?")); });
+</script>
+</body>
+</html>

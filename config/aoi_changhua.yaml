@@ -1,0 +1,81 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# AgriSentinel pilot Area-Of-Interest (AOI) configuration.
+#
+# Pilot region: Changhua County (彰化縣) — the canonical hotspot for illegal
+# farmland factories. The bounding box below covers 和美鎮 (Hemei) and the
+# northern edge of 鹿港鎮 (Lukang), kept small so Sentinel-2 volume stays
+# tractable on a laptop. Everything in this file is data, not machine config —
+# it is safe to commit and is the single knob a grader changes to re-target the
+# pipeline at another township.
+# ─────────────────────────────────────────────────────────────────────────────
+name: changhua_hemei
+display_name: "Changhua County — Hemei / Lukang pilot (彰化縣 和美鎮 / 鹿港鎮)"
+county: "彰化縣"
+township: "和美鎮"
+
+# WGS84 (EPSG:4326) bounding box: [min_lon, min_lat, max_lon, max_lat]
+bbox: [120.460, 24.090, 120.545, 24.150]
+
+# Center + radius used for the Disfactory radius query (range is in kilometres).
+center: { lon: 120.5025, lat: 24.120 }
+disfactory_range_km: 7
+
+# Projected CRS for all area / distance computations.
+# EPSG:3826 = TWD97 / TM2 zone 121, the official metric CRS for Taiwan.
+working_crs: "EPSG:3826"
+
+# ── Sentinel-2 bi-temporal scene selection (Microsoft Planetary Computer STAC) ──
+stac:
+  collection: "sentinel-2-l2a"
+  # Bands: B02/B03/B04 (RGB), B08 (NIR, 10 m), B11/B12 (SWIR, 20 m).
+  # NDVI = (B08-B04)/(B08+B04); NDBI = (B11-B08)/(B11+B08).
+  bands: ["B02", "B03", "B04", "B08", "B11", "B12"]
+  max_cloud_cover: 25
+  # "Before" and "after" low-cloud windows. Taiwan is least cloudy Oct–Mar.
+  # A multi-year gap maximises the new-construction signal for the demo.
+  t0: { start: "2019-10-01", end: "2020-03-31" }
+  t1: { start: "2024-10-01", end: "2025-03-31" }
+
+# ── Tiling for the (PySpark) batch change-detection job ──
+tiling:
+  tile_size_m: 1280       # 128 px at 10 m ground sample distance
+  overlap_m: 0
+
+# ── Change-detection thresholds (spectral fallback detector) ──
+detection:
+  # A pixel is flagged as candidate new construction when built-up index rises
+  # AND vegetation index falls between t0 and t1.
+  ndbi_delta_min: 0.06    # minimum increase in NDBI (built-up)
+  ndvi_drop_min: 0.12     # minimum decrease in NDVI (vegetation loss)
+  min_area_m2: 400        # discard blobs smaller than this (noise)
+  morph_open_iter: 1      # binary opening to remove speckle
+  max_candidates: 500     # safety cap on polygons per run
+  match_radius_m: 80      # eval: a detection counts as a hit within this distance of a label
+
+# ── Parcel / zoning layer ──
+# provider:
+#   synthetic  → deterministic, reproducible parcel grid (no external auth).
+#                Clearly labelled source='synthetic' in PostGIS and the report.
+#   geojson    → load polygons from a local/remote GeoJSON (set `path`).
+#   landuse    → load the 國土利用現況調查 land-use survey clip (set `path`).
+# Full NLSC vector cadastre (地籍 WFS) requires a government/academic
+# application, so the demo defaults to `synthetic`; see report §GTM.
+parcels:
+  provider: "synthetic"
+  path: null
+  synthetic:
+    grid_m: 120           # ~1.2 ha parcels (typical Taiwan farmland parcel)
+    farmland_fraction: 0.7
+    seed: 20260615        # deterministic → reproducible
+
+# ── Statutes for the dossier RAG (resolved by 全國法規資料庫 PCode) ──
+# law_pcodes are public regulation identifiers, not machine config.
+laws:
+  pcodes:
+    - { pcode: "J0030045", title: "工廠管理輔導法" }                       # Factory Management Act
+    - { pcode: "D0070027", title: "區域計畫法" }                           # Regional Plan Act
+    - { pcode: "D0070031", title: "非都市土地使用管制規則" }               # Non-urban Land Use Control Rules
+    - { pcode: "M0090001", title: "農業發展條例" }                         # Agricultural Development Act
+  chunk_chars: 600
+  chunk_overlap: 80
+  top_k: 6
