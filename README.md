@@ -13,10 +13,14 @@ Disfactory NGO actually files.
 > The product we sell is the **agent's decision-grade output**, not the raw data
 > underneath. The big-data pipeline exists to feed the agent a substrate fresh
 > and well-structured enough that its dossier beats anything a generic chatbot
-> could produce. See `report/report.md` for the full business + technical case.
+> could produce. The full business + technical case is in
+> **[`report/report.pdf`](report/report.pdf)** (Typst source: `report/report.typ`).
 
 - **GitHub:** https://github.com/HaoWen46/AgriSentinel
 - **Live demo:** _(optional bonus — add the deployed URL here and on report page 1)_
+- **Status:** end-to-end verified against the live stack — a sample run scores
+  **precision 0.67 / recall 0.80 / F1 0.73** vs. Disfactory labels (shown on the
+  dashboard and printed by `make evaluate`).
 
 ---
 
@@ -79,13 +83,19 @@ make demo                     # build + up + live ingest + detect/join/evaluate/
 # open http://localhost:8000
 ```
 
-No network / no API key? Run the fully offline demo (synthetic imagery + sample
-labels; rule-based template dossiers):
+No network / no API key? Run the fully offline demo (deterministic synthetic
+imagery + sample labels; rule-based template dossiers):
 
 ```bash
 make demo-offline
 # open http://localhost:8000
 ```
+
+The offline demo is deterministic and, by construction, yields a non-trivial
+**precision 0.67 / recall 0.80** (some detections have no matching label, and one
+labelled factory has no detectable patch) — an honest score, not a staged 100%.
+The streaming bonus (Phase 6) needs the Kafka broker; the core pipeline and
+dashboard work without it.
 
 Useful targets (`make help` lists all):
 
@@ -132,8 +142,10 @@ uv run --extra demand python scripts/demand/tender_search.py      # gov procurem
 # scripts/demand/survey_questions.md — the exact survey instrument
 ```
 
-Outputs land in `outputs/demand/` (JSON + CSV + chart). See `report/report.md`
-§Demand for the analysis.
+Outputs land in `outputs/demand/` (JSON + CSV + chart). See `report/report.pdf`
+§2 (Demand) for the analysis — a representative run finds **100 Disfactory
+reports** near the pilot township and **370 government tenders** matching
+monitoring / remote-sensing keywords.
 
 ---
 
@@ -173,6 +185,14 @@ api/           main (FastAPI) · stream (Kafka worker + SSE)
 dashboard/     index.html (Leaflet)
 scripts/       init_db.sql · demand/ (reproducible evidence)
 data/laws_seed/ curated statute corpus (committed)
-report/        report.md (the PDF source)
+report/        report.typ → report.pdf (deliverable); report.md (markdown mirror)
 tests/         unit + DB-integration tests
+```
+
+## Tests
+
+```bash
+make test     # 14 tests: pure-logic units + a PostGIS zoning-join correctness
+              # integration test (auto-skips when no database is reachable)
+make lint     # ruff
 ```
