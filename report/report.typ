@@ -19,7 +19,7 @@
 #show raw: set text(font: ("DejaVu Sans Mono", "Noto Sans CJK TC"), size: 8pt)
 #set heading(numbering: "1.")
 #show heading: set text(font: ("Noto Sans CJK TC",))
-#show heading.where(level: 1): set text(fill: rgb("#234f2c"))
+#show heading.where(level: 1): set text(size: 11.5pt, fill: rgb("#234f2c"))
 #show link: set text(fill: rgb("#2f6b3c"))
 
 // Diagram layer helpers.
@@ -33,19 +33,18 @@
 
 // ── Title block ──────────────────────────────────────────────────────────────
 #align(center)[
-  #text(20pt, weight: "bold", font: ("Noto Sans CJK TC",))[AgriSentinel]
+  #text(26pt, weight: "bold", font: ("Noto Sans CJK TC",))[AgriSentinel]
   #v(3pt)
-  #text(10.5pt, fill: rgb("#3a4034"))[Monetizing Fresh Satellite Substrate as
+  #text(9.5pt, fill: rgb("#3a4034"))[Monetizing Fresh Satellite Substrate as
   Enforcement-Grade Dossiers for Illegal Farmland Factories]
-  #v(4pt)
-  #text(9.5pt, style: "italic")[Big Data Systems Final Project · National Taiwan University · Spring 2026]
+  #v(3pt)
+  #text(8.5pt, style: "italic")[Big Data Systems Final Project · National Taiwan University · Spring 2026]
 ]
 
 #align(center)[
   #box(inset: 8pt, radius: 5pt, fill: rgb("#f4f1ea"), stroke: 0.5pt + rgb("#d9d6c8"))[
     #set text(9pt)
-    *GitHub:* #link("https://github.com/HaoWen46/AgriSentinel")[github.com/HaoWen46/AgriSentinel]
-    #h(1.2em) *Live demo:* _(optional bonus, insert deployed URL)_ \
+    *GitHub:* #link("https://github.com/HaoWen46/AgriSentinel")[github.com/HaoWen46/AgriSentinel] \
     Reproduce with `make demo` (live) or `make demo-offline` (no network / no API key), then open `localhost:8000`.
   ]
 ]
