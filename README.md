@@ -7,7 +7,7 @@ working, end-to-end pipeline that watches one pilot township in Changhua County
 (彰化縣 和美鎮), detects new structures appearing on agricultural land from
 Sentinel-2 imagery, confirms they sit on farmland via a PostGIS zoning join, and
 uses a Claude agent (RAG over Taiwanese statutes) to draft a per-parcel
-**enforcement dossier** — the artifact a county enforcement unit or the
+**enforcement dossier**, the artifact a county enforcement unit or the
 Disfactory NGO actually files.
 
 > The product we sell is the **agent's decision-grade output**, not the raw data
@@ -17,8 +17,8 @@ Disfactory NGO actually files.
 > **[`report/report.pdf`](report/report.pdf)** (Typst source: `report/report.typ`).
 
 - **GitHub:** https://github.com/HaoWen46/AgriSentinel
-- **Live demo:** _(optional bonus — add the deployed URL here and on report page 1)_
-- **Status:** end-to-end verified against the live stack — a sample run scores
+- **Live demo:** _(optional bonus, add the deployed URL here and on report page 1)_
+- **Status:** end-to-end verified against the live stack, a sample run scores
   **precision 0.67 / recall 0.80 / F1 0.73** vs. Disfactory labels (shown on the
   dashboard and printed by `make evaluate`).
 
@@ -26,37 +26,27 @@ Disfactory NGO actually files.
 
 ## Architecture
 
-```
-        SOURCES                      INGESTION                    LAKE / STORE
- ┌────────────────────────┐   ┌───────────────────────┐   ┌──────────────────────┐
- │ Sentinel-2 L2A (STAC,  │──▶│ stac_fetch (bi-temporal│──▶│ MinIO (S3): COGs,    │
- │  Planetary Computer)   │   │  scene pair for AOI)   │   │  manifests           │
- │ Disfactory open API    │──▶│ labels_fetch (eval set)│──▶│ PostGIS: parcels,    │
- │ NLSC land-use / parcels│──▶│ parcels_load           │   │  labels, detections, │
- │ 全國法規資料庫 statutes│──▶│ laws_fetch→chunk→embed │──▶│  flagged, dossiers   │
- └────────────────────────┘   └───────────┬───────────┘   │ pgvector: law chunks │
-                                           │               └──────────────────────┘
-                                           ▼
-   ┌───────────────────────────────────────────────────────────────────────────┐
-   │ PROCESSING                                                                  │
-   │  change_detect (spectral NDBI/NDVI; torchgeo-swappable)                     │
-   │  spark_tiles  (PySpark tiles the AOI, runs CD per tile)  ── batch ──▶       │
-   │  zoning_join  (detections × farmland parcels, PostGIS ST_Intersects)        │
-   │  evaluate     (precision/recall vs Disfactory labels)                       │
-   └───────────────────────────────────┬───────────────────────────────────────┘
-                                        ▼
-   ┌──────────────────────────────────────────────────────────────────┐
-   │ AGENT LAYER (value capture): dossier_agent                         │
-   │  RAG (pgvector) retrieves matching statute chunks + structured     │
-   │  detection facts → Claude drafts a grounded enforcement dossier    │
-   │  (地號, zoning, before/after, violated law, action) → draft→critic  │
-   └───────────────────────────────────┬──────────────────────────────┘
-                                        ▼
-   ┌──────────────────────────────────────────────────────────────────┐
-   │ DELIVERY: FastAPI + Leaflet dashboard (flagged parcels, before/    │
-   │  after imagery, downloadable dossiers, eval metrics).              │
-   │  Kafka event: new detection → worker → dossiers → live update.    │
-   └──────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    SRC["SOURCES<br/>Sentinel-2 L2A (STAC) · Disfactory open API<br/>NLSC land-use / parcels · 全國法規資料庫 statutes"]
+    ING["INGESTION<br/>stac_fetch · labels_fetch · parcels_load · laws_fetch → chunk → embed"]
+    STORE["LAKE / STORE<br/>MinIO (S3): COGs + manifests · PostGIS: parcels, labels, detections, flagged, dossiers · pgvector: law chunks"]
+    PROC["PROCESSING<br/>change_detect (NDBI/NDVI) · spark_tiles (PySpark)<br/>zoning_join (ST_Intersects) · evaluate (precision / recall)"]
+    AGENT["AGENT (value capture)<br/>dossier_agent: pgvector RAG → Claude draft → critic → grounded per-parcel dossier"]
+    DELIV["DELIVERY<br/>FastAPI + Leaflet dashboard · before/after imagery · eval metrics<br/>Kafka worker: new detection → dossiers (SSE)"]
+    SRC -->|fetch| ING -->|store| STORE -->|read AOI tiles| PROC -->|ranked flagged parcels| AGENT -->|dossiers + metrics| DELIV
+    classDef src fill:#eef1ea,stroke:#a9b89e,color:#1c2419;
+    classDef ing fill:#e4efe0,stroke:#a9b89e,color:#1c2419;
+    classDef store fill:#f5ebda,stroke:#cbb487,color:#1c2419;
+    classDef proc fill:#e1eeed,stroke:#9fc0bd,color:#1c2419;
+    classDef agent fill:#d8e7db,stroke:#8fb89a,color:#1c2419;
+    classDef deliv fill:#e6edf5,stroke:#a8bcd6,color:#1c2419;
+    class SRC src
+    class ING ing
+    class STORE store
+    class PROC proc
+    class AGENT agent
+    class DELIV deliv
 ```
 
 | Layer | Technology | Why it earns its place |
@@ -72,7 +62,7 @@ Disfactory NGO actually files.
 
 ---
 
-## Quick start (Docker — recommended)
+## Quick start (Docker, recommended)
 
 **Prerequisites:** Docker (with Compose) and, for LLM-authored dossiers, an
 Anthropic API key. Everything else is bundled.
@@ -93,7 +83,7 @@ make demo-offline
 
 The offline demo is deterministic and, by construction, yields a non-trivial
 **precision 0.67 / recall 0.80** (some detections have no matching label, and one
-labelled factory has no detectable patch) — an honest score, not a staged 100%.
+labelled factory has no detectable patch), an honest score, not a staged 100%.
 The streaming bonus (Phase 6) needs the Kafka broker; the core pipeline and
 dashboard work without it.
 
@@ -119,7 +109,7 @@ parcel, and see its before/after Sentinel-2 chips + the generated dossier.
 ## Local development (without Docker)
 
 Uses [`uv`](https://docs.astral.sh/uv/). The pipeline stages still need PostGIS,
-MinIO and (optionally) Kafka reachable — easiest is to run those via
+MinIO and (optionally) Kafka reachable, easiest is to run those via
 `docker compose up -d minio postgis kafka` and point `.env` at `localhost`.
 
 ```bash
@@ -134,16 +124,16 @@ fallbacks): `--extra ml` (torchgeo deep CD, transformer embeddings),
 
 ---
 
-## Demand evidence (Component 2 — reproducible)
+## Demand evidence (Component 2, reproducible)
 
 ```bash
 uv run --extra demand python scripts/demand/disfactory_stats.py   # reports/year near the AOI
 uv run --extra demand python scripts/demand/tender_search.py      # gov procurement (WTP) matches
-# scripts/demand/survey_questions.md — the exact survey instrument
+# scripts/demand/survey_questions.md, the exact survey instrument
 ```
 
 Outputs land in `outputs/demand/` (JSON + CSV + chart). See `report/report.pdf`
-§2 (Demand) for the analysis — a representative run finds **100 Disfactory
+§2 (Demand) for the analysis, a representative run finds **100 Disfactory
 reports** near the pilot township and **370 government tenders** matching
 monitoring / remote-sensing keywords.
 
@@ -154,9 +144,9 @@ monitoring / remote-sensing keywords.
 Nothing in this repo hardcodes a machine path, host, or secret. Behaviour is
 driven entirely by:
 
-- **`.env`** (gitignored) — `ANTHROPIC_API_KEY`, service URLs, model, embedder,
+- **`.env`** (gitignored), `ANTHROPIC_API_KEY`, service URLs, model, embedder,
   detector. Template in `.env.example`.
-- **`config/aoi_changhua.yaml`** — the pilot bbox, scene dates, thresholds, the
+- **`config/aoi_changhua.yaml`**, the pilot bbox, scene dates, thresholds, the
   parcel provider, and the statute PCodes. Change this one file to re-target
   another township. `DATA_DIR` defaults to a relative `./data`.
 
@@ -164,12 +154,12 @@ driven entirely by:
 
 - **Sentinel-2** © ESA / Copernicus (open).
 - **Disfactory** reported factories © 農地違章工廠回報系統貢獻者, CC BY 4.0.
-- **Statutes** © 全國法規資料庫 (Ministry of Justice) open data — curated
+- **Statutes** © 全國法規資料庫 (Ministry of Justice) open data, curated
   excerpts under `data/laws_seed/`, each citing its source URL.
-- **NLSC** land-use / cadastral — full vector cadastre requires a
+- **NLSC** land-use / cadastral, full vector cadastre requires a
   government/academic application (see report §GTM); the demo defaults to a
   deterministic synthetic parcel layer clearly labelled `source='synthetic'`.
-- **Government tenders** — 政府電子採購網, public record (via the g0v PCC API).
+- **Government tenders**, 政府電子採購網, public record (via the g0v PCC API).
 
 Dossiers are **decision-support, not legal determinations**; the artifact targets
 parcels/structures, not persons (PDPA-aware).

@@ -1,12 +1,12 @@
 ---
 title: "AgriSentinel: Monetizing Fresh Satellite Substrate as Enforcement-Grade Dossiers for Illegal Farmland Factories"
-subtitle: "Big Data Systems — Final Project, National Taiwan University (Spring 2026)"
+subtitle: "Big Data Systems, Final Project, National Taiwan University (Spring 2026)"
 author: "AgriSentinel"
 date: "2026-06-15"
 ---
 
 > **GitHub:** https://github.com/HaoWen46/AgriSentinel
-> **Live demo:** _(optional bonus — insert deployed URL here)_
+> **Live demo:** _(optional bonus, insert deployed URL here)_
 >
 > Reproduce everything with `make demo` (live) or `make demo-offline` (no
 > network / no API key), then open `http://localhost:8000`.
@@ -17,10 +17,10 @@ date: "2026-06-15"
 
 Raw, public, easy data has no durable value: in a competitive market its price
 falls to the marginal cost of production, and a 200-line scraper has a marginal
-cost near zero. The durable value is in **cognitive labour** — the work a human
+cost near zero. The durable value is in **cognitive labour**, the work a human
 analyst does to turn messy inputs into a decision-grade artifact. As of 2026, AI
 agents perform that labour at a fraction of the human wage. **AgriSentinel sells
-the agent's output artifact — a per-parcel enforcement dossier — not the data
+the agent's output artifact, a per-parcel enforcement dossier, not the data
 underneath.** The big-data pipeline (multi-temporal satellite imagery fused with
 cadastral/zoning data and statute retrieval) exists to feed the agent a substrate
 so fresh and well-structured that its dossier beats anything the customer could
@@ -29,7 +29,7 @@ rather than decorative.
 
 The exploitable asymmetry: **government has authority but no eyes.** It can
 lawfully cut water/electricity and demolish illegal farmland structures, but it
-does not continuously watch the farmland, so it learns of violations late — after
+does not continuously watch the farmland, so it learns of violations late, after
 they harden into pollution or scandal. The technical edge is **collapsing the
 observation lag**. There is no luck here (the opposite of finance/alpha-farming):
 either the pipeline sees the new structure or it doesn't. The edge is purely
@@ -47,20 +47,20 @@ today is reactive: a citizen reports, an inspector is dispatched, paperwork
 (公文) is hand-drafted, and only then can a cut-off/demolition order proceed.
 
 **Beachhead / channel (moves faster): environmental NGOs already in the
-workflow** — 地球公民基金會 (Citizens of the Earth Taiwan) and the g0v community
+workflow**, 地球公民基金會 (Citizens of the Earth Taiwan) and the g0v community
 behind **Disfactory** (disfactory.tw). They are the existing "eyes": citizens
 report suspected factories, and CET files the paperwork that pressures local
 governments. They even crowdsource *detection* through a game, **大家來找廠**,
 where volunteers eyeball aerial imagery to spot new buildings on farmland. That
 manual visual change-detection, plus the manual drafting of enforcement
 paperwork, is exactly the cognitive labour AgriSentinel automates. We do not
-invent demand — we replace a crowdsourcing game and hand-written dossiers with a
+invent demand, we replace a crowdsourcing game and hand-written dossiers with a
 pipeline, and we ride the NGO→government relationship as the cold-start wedge.
 
 **Why us over the status quo.** The status quo is anonymous citizen reports + a
 volunteer game + manual paperwork: slow, unsystematic, and unscalable across
 ~50,000 sites. We deliver systematic, island-scalable detection **plus** a
-ready-to-file dossier per parcel — the same output an inspector would assemble by
+ready-to-file dossier per parcel, the same output an inspector would assemble by
 hand, produced in seconds.
 
 **Who we explicitly do *not* target:** the factory operators (adversaries), and
@@ -88,25 +88,25 @@ year. A representative run (7 km radius around 和美鎮, retrieved 2026-06):
 (*2026 partial). Cross-checked against the public island-wide figures: **~50,000**
 illegal factories on Taiwan's farmland, **3,000–6,000 new per year**, **~1,500 ha
 of farmland lost per year** (CET reporting; Disfactory; MOEA unregistered-factory
-statistics — re-verify and cite at submission). The chart and CSV are written to
+statistics, re-verify and cite at submission). The chart and CSV are written to
 `outputs/demand/`.
 
 ### 2.2 The manual-labour baseline we replace
 
 The cognitive labour has two halves, both currently human:
 
-1. **Detection** — the 大家來找廠 volunteer game: a person reviews aerial chips
+1. **Detection**, the 大家來找廠 volunteer game: a person reviews aerial chips
    and decides whether a new building appeared. At a conservative ~1–2 minutes of
    careful review per image and tens of thousands of parcels to re-check each
    cycle, the volunteer-hours are substantial and unscalable.
-2. **Dossier drafting** — CET / county staff hand-assemble the parcel number
+2. **Dossier drafting**, CET / county staff hand-assemble the parcel number
    (地號), zoning status, evidence, the specific statute, and a recommended
    action into filing-ready paperwork.
 
 AgriSentinel automates (1) outright and reduces (2) to *human review of a
 pre-drafted dossier*. The survey instrument (`survey_questions.md`) quantifies
 both: time-per-case for staff (Instrument A, Q4–Q5) and minutes-per-image for
-volunteers (Instrument B, Q2–Q6) — the non-monetary willingness-to-pay (time
+volunteers (Instrument B, Q2–Q6), the non-monetary willingness-to-pay (time
 saved).
 
 ### 2.3 Published willingness to pay (reproducible)
@@ -120,7 +120,7 @@ matching tenders** across keywords:
 |---|---|---|---|---|---|---|---|
 | Matches | 5 | 21 | 100† | 100† | 100† | 10 | 31 |
 
-†page-capped at 100 — the true counts are higher. Government bodies already
+†page-capped at 100, the true counts are higher. Government bodies already
 procure aerial/remote-sensing and land-monitoring services at scale; we attach to
 an existing budget line, not a hypothetical one. (Award amounts live on each
 tender's detail page; the script captures volume and recency as the demand
@@ -151,27 +151,27 @@ the *exact* pipeline ships commercially and anchors per-municipality pricing.
 |---|---|---|
 | **Sentinel-2 L2A** (Planetary Computer STAC) | 10 m optical, time-series | `stac_fetch`: STAC search per low-cloud window → least-cloudy scene → windowed COG read of the AOI footprint onto a common 10 m grid → MinIO |
 | **Disfactory API** | reported factories (地號, 段, status) | `labels_fetch`: radius query around AOI centre → clip to bbox → PostGIS (the evaluation ground truth) |
-| **Parcels / zoning** | farmland polygons + 地號 | `parcels_load`: NLSC land-use / GeoJSON, or a deterministic synthetic grid (full vector cadastre is application-gated — see §6) |
+| **Parcels / zoning** | farmland polygons + 地號 | `parcels_load`: NLSC land-use / GeoJSON, or a deterministic synthetic grid (full vector cadastre is application-gated, see §6) |
 | **Statutes** (全國法規資料庫) | 工輔法, 區域計畫法, 非都市土地使用管制規則, 農業發展條例 | `laws_fetch`: curated article corpus → chunk → embed → pgvector |
 
 A key efficiency: Sentinel-2 assets are **Cloud-Optimized GeoTIFFs**, so
 `stac_fetch` issues HTTP range requests for only the AOI window (~0.6 MP/band)
-instead of the full ~110 MP scene — this is what keeps the volume tractable on a
+instead of the full ~110 MP scene, this is what keeps the volume tractable on a
 laptop while remaining honestly "big data" (the archive compounds every cycle).
 
-### 3.2 Storage & processing — and why each tool fits the shape of the data
+### 3.2 Storage & processing, and why each tool fits the shape of the data
 
-- **MinIO (S3) + COG** — the raw lake: immutable raster zone, lakehouse pattern;
+- **MinIO (S3) + COG**, the raw lake: immutable raster zone, lakehouse pattern;
   variety (rasters, manifests) and volume.
-- **PostGIS + pgvector** — one store, two jobs: GIST-indexed spatial joins decide
+- **PostGIS + pgvector**, one store, two jobs: GIST-indexed spatial joins decide
   *is this farmland?* (`ST_Intersects`, area in EPSG:3826), and a `vector` column
   serves the statute RAG (`<=>` cosine). Co-locating them removes a moving part.
-- **PySpark** (`spark_tiles`) — the batch paradigm: tiles the AOI and maps change
+- **PySpark** (`spark_tiles`), the batch paradigm: tiles the AOI and maps change
   detection per tile, so the same job scales to many tiles / historical date
   pairs by adding executors. A single-process fallback runs identically without
   Spark.
 - **Apache Kafka** (KRaft mode; the shipped compose uses Kafka for CPU
-  portability, but any Kafka-API broker such as Redpanda works) — velocity: a
+  portability, but any Kafka-API broker such as Redpanda works), velocity: a
   `detection.completed` event fans out to a worker (which runs join→eval→dossiers)
   and to the dashboard over SSE, so a new imagery date flows to fresh dossiers
   with no manual rerun.
@@ -207,7 +207,7 @@ imagery + dossier. The architecture diagram is in `README.md` and mirrors §3.
 
 The default detector is **spectral**: between t0 and t1 it flags pixels where the
 built-up index rises (ΔNDBI ≥ 0.06) *and* the vegetation index falls
-(ΔNDVI ≥ 0.12) — the signature of construction replacing crops — then vectorises
+(ΔNDVI ≥ 0.12), the signature of construction replacing crops, then vectorises
 connected regions ≥ 400 m² into candidate polygons with a confidence score.
 Requiring **both** signals suppresses the bare-soil/water false positives a
 single-index threshold would trip on (verified on a real Changhua scene: NDVI
@@ -216,7 +216,7 @@ ranged −0.21 to 0.62). The interface is swappable: a `torchgeo` Siamese-UNet
 spectral with a loud warning. 10 m Sentinel-2 is deliberately used as a
 "something changed" detector, to be confirmed with higher-res NLSC orthophotos.
 
-### 4.2 Zoning join — "illegal" = change **+** zoning
+### 4.2 Zoning join, "illegal" = change **+** zoning
 
 A change polygon is only a *candidate violation* once it sits on agricultural
 land. `zoning_join` intersects detections with farmland parcels in PostGIS, keeps
@@ -232,7 +232,7 @@ numbers, dates, areas, or citations, and to keep the language at "suspected /
 candidate violation pending field verification." The dossier is decision-support,
 not a legal ruling, and targets a parcel/structure, never a person.
 
-### 4.4 Evaluation — the credibility anchor
+### 4.4 Evaluation, the credibility anchor
 
 `evaluate` computes precision/recall of flagged detections against Disfactory
 labels within a match radius (default 80 m):
@@ -241,12 +241,12 @@ labels within a match radius (default 80 m):
 - **Recall** = known labels with a flagged detection within radius ÷ all labels.
 
 Disfactory labels are crowd-reported and **incomplete**, so these are *indicative,
-not absolute* — a flagged parcel with no nearby label may still be a real, simply
+not absolute*, a flagged parcel with no nearby label may still be a real, simply
 unreported, factory (which is precisely the value: surfacing the unreported). The
 dashboard shows the live number for the selected run; the offline demo is
 constructed so precision and recall are both strictly between 0 and 1 (some
 patches have labels, one labelled factory has no detectable patch, and some
-detections have no label) — an honest, non-trivial score rather than a staged
+detections have no label), an honest, non-trivial score rather than a staged
 100%.
 
 > _Insert the precision/recall/F1 from your run here (printed by `make evaluate`
@@ -280,14 +280,14 @@ snapshots is history a later competitor cannot reproduce.
   product is framed as decision-support, never an automated ruling.
 - **Data acquisition cost & licensing.** Sentinel-2 and Disfactory are open
   (CC BY 4.0 cited); statutes are MOJ open data. The real friction is the **NLSC
-  vector cadastre** (地籍 WFS), which requires a government/academic application —
+  vector cadastre** (地籍 WFS), which requires a government/academic application, 
   so the demo ships a deterministic synthetic parcel layer (clearly labelled) and
   the production path joins the official farmland/land-use layer once access is
   granted. This gating is itself a moat once we are inside the channel.
 - **Legal / ethics / PDPA.** The dossier targets parcels/structures, not persons;
   we avoid naming private individuals and keep "suspected/candidate" language.
 - **Don't antagonise the incumbent.** We augment CET/Disfactory's proven workflow
-  and the government's authority — leverage, not replacement.
+  and the government's authority, leverage, not replacement.
 - **Cold start.** Beachhead through the NGO channel; one county pilot before
   island scale; the eval number is the trust-builder that unlocks the first paid
   pilot.
@@ -303,11 +303,11 @@ snapshots is history a later competitor cannot reproduce.
 - **Cloud cover.** Taiwan is cloudy; optical Sentinel-2 has gaps. Mitigated with
   low-cloud scene selection and multi-temporal windows; SAR fusion is a noted
   `# TODO(scale)`, not blocking the MVP.
-- **Resolution.** 10 m is coarse for small buildings — used as a "something
+- **Resolution.** 10 m is coarse for small buildings, used as a "something
   changed" trigger, confirmed with higher-res orthophotos.
 - **Eval honesty.** Disfactory labels are incomplete; precision/recall are
   indicative. The synthetic parcel/imagery fallback is for offline
-  reproducibility and is always labelled as such — never presented as real.
+  reproducibility and is always labelled as such, never presented as real.
 
 ---
 
