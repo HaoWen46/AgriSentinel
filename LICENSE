@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 AgriSentinel
+Copyright (c) 2026 HaoWen46
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,10 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-Third-party data used by this project retains its own licences:
-- Sentinel-2 imagery © ESA / Copernicus (free, open).
-- Disfactory reports © 農地違章工廠回報系統貢獻者 (Disfactory contributors), CC BY 4.0.
-- Statutes © 全國法規資料庫 (Ministry of Justice) open data.
-- Government tender records: 政府電子採購網 (public record).

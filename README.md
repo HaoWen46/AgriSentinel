@@ -186,3 +186,14 @@ make test     # 14 tests: pure-logic units + a PostGIS zoning-join correctness
               # integration test (auto-skips when no database is reachable)
 make lint     # ruff
 ```
+
+## License
+
+The code in this repository is released under the **MIT License** (see
+[`LICENSE`](LICENSE)), © 2026 HaoWen46.
+
+Third-party **data** keeps its own licences and is not relicensed here: Sentinel-2
+© ESA / Copernicus (open); Disfactory reports © 農地違章工廠回報系統貢獻者, CC BY 4.0;
+statutes © 全國法規資料庫 (Ministry of Justice) open data; government tender records
+via 政府電子採購網 (public record). See **Data sources & licences** above for the
+full list and the NLSC terms.
